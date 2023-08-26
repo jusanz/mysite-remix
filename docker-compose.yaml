@@ -1,0 +1,12 @@
+services:
+  client:
+    build:
+      context: ./client
+      target: "development"
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./client/app:/usr/server/app
+    environment:
+      TZ: Asia/Tokyo
