@@ -1,4 +1,14 @@
 services:
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - ./postgres/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
   client:
     build:
       context: ./client
@@ -6,17 +16,10 @@ services:
     ports:
       - "3000:3000"
       - "3001:3001"
+      - "5555:5555"
     volumes:
       - ./client/app:/usr/server/app
     environment:
       TZ: Asia/Tokyo
-
-  db:
-    image: postgres
-    restart: always
-    volumes:
-      - ./postgres/db:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+    depends_on:
+      - db
