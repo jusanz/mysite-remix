@@ -10,3 +10,13 @@ services:
       - ./client/app:/usr/server/app
     environment:
       TZ: Asia/Tokyo
+
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - ./postgres/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
