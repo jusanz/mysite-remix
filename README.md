@@ -2,7 +2,9 @@
 
 Website for our project, JUSANZ. As Example of website using Remix, Postgres, and Docker Compose.
 
-## Database Update
+## Database
+
+### push
 
 ```:sh
 docker compose exec client npx prisma db push
