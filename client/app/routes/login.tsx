@@ -3,6 +3,8 @@ import { Link, useActionData, useSearchParams } from "@remix-run/react";
 import { db } from "~/utils/db.server";
 import { json } from "@remix-run/node";
 
+import { createUserSession, login } from "~/utils/session.server";
+
 function validateEmail(email: string) {
   if (!email.includes("@")) {
     return "Please enter a valid email address";
@@ -49,14 +51,15 @@ export const action = async ({ request }: ActionArgs) => {
     return json({ fields, fieldErrors, formError: null }, { status: 400 });
   }
 
-  return json(
-    {
-      fields: null,
-      fieldErrors: null,
-      formError: "not impleted yet",
-    },
-    { status: 400 }
-  );
+  const user = await login({ password, email });
+  if (!user) {
+    return json(
+      { fields, fieldErrors: null, formError: "Invalid email or password" },
+      { status: 400 }
+    );
+  }
+
+  return createUserSession(user.id, redirectTo);
 };
 
 export default function Login() {
