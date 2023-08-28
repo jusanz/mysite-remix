@@ -5,6 +5,7 @@ WORKDIR /usr/server
 COPY ./package.json ./
 RUN npm install
 COPY ./ .
+RUN npx prisma generate
 
 FROM builder as production
 ENV NODE_ENV=production

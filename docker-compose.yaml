@@ -21,5 +21,9 @@ services:
       - ./client/app:/usr/server/app
     environment:
       TZ: Asia/Tokyo
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
     depends_on:
       - db
