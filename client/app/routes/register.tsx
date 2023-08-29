@@ -1,14 +1,10 @@
-import type { ActionArgs, LinksFunction } from "@remix-run/node";
-import { Link, useActionData, useSearchParams } from "@remix-run/react";
-import { db } from "~/utils/db.server";
+import type { ActionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import { Link, useActionData, useSearchParams } from "@remix-run/react";
 
-import { createUserSession, login } from "~/utils/session.server";
-import {
-  validateEmail,
-  validatePassword,
-  validateUrl,
-} from "../utils/validate";
+import { validateEmail, validatePassword, validateUrl } from "~/utils/validate";
+import { db } from "~/utils/db.server";
+import { register, createUserSession } from "~/utils/session.server";
 
 export const action = async ({ request }: ActionArgs) => {
   const form = await request.formData();
@@ -18,36 +14,51 @@ export const action = async ({ request }: ActionArgs) => {
   if (typeof email !== "string" || typeof password !== "string") {
     return json(
       {
-        fields: null,
         fieldErrors: null,
+        fields: null,
         formError: "Form not submitted correctly",
       },
       { status: 400 }
     );
   }
 
-  const fields = { email, password };
+  const fields = { password, email };
   const fieldErrors = {
-    email: validateEmail(email),
     password: validatePassword(password),
+    email: validateEmail(email),
   };
 
   if (Object.values(fieldErrors).some(Boolean)) {
     return json({ fields, fieldErrors, formError: null }, { status: 400 });
   }
 
-  const user = await login({ password, email });
-  if (!user) {
+  const userExists = await db.user.findFirst({ where: { email } });
+  if (userExists) {
     return json(
-      { fields, fieldErrors: null, formError: "Invalid email or password" },
+      {
+        fields,
+        fieldErrors: null,
+        formError: `User with Email ${email} already exists`,
+      },
       { status: 400 }
     );
   }
 
+  const user = await register({ email, password });
+  if (!user) {
+    return json(
+      {
+        fields,
+        fieldErrors: null,
+        formError: "Something went wrong trying to create a new user.",
+      },
+      { status: 400 }
+    );
+  }
   return createUserSession(user.id, redirectTo);
 };
 
-export default function Login() {
+export default function Register() {
   const actionData = useActionData<typeof action>();
   const [searchParams] = useSearchParams();
   return (
@@ -136,7 +147,7 @@ export default function Login() {
                 type="submit"
                 className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
               >
-                Sign in
+                Register
               </button>
             </form>
           </div>
