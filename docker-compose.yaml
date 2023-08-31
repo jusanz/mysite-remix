@@ -3,9 +3,17 @@ services:
     image: postgres
     restart: always
     volumes:
-      - ./postgres/db:/var/lib/postgresql/data
+      - db-remix:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  db-django:
+    image: postgres
+    restart: always
+    volumes:
+      - db-django:/var/lib/postgresql/data
+    environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
@@ -31,7 +39,7 @@ services:
   redis:
     image: "redis:latest"
     volumes:
-      - ./redis:/data
+      - redis:/data
 
   django:
     build: django
@@ -39,6 +47,7 @@ services:
       - "8000:8000"
     volumes:
       - ./public:/public
+      - ./django:/app
     environment:
       - SECRET_KEY=${DJANGO_SECRET_KEY}
       - DEBUG=True
@@ -48,6 +57,7 @@ services:
       - POSTGRES_NAME=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TRUSTED_ORIGINS=${DJANGO_TRUSTED_ORIGINS}
     depends_on:
       - db
       - redis
@@ -62,3 +72,8 @@ services:
     environment:
       - NGINX_HOST=_
       - NGINX_PORT=80
+
+volumes:
+  db-django:
+  db-remix:
+  redis:

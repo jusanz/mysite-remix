@@ -5,3 +5,5 @@ channels
 channels_redis
 djangorestframework
 django-filter
+django-oauth-toolkit
+django-cors-headers

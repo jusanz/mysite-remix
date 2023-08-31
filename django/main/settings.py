@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'oauth2_provider',
+    'corsheaders',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -81,7 +84,7 @@ DATABASES = {
         "NAME": os.environ.get("POSTGRES_NAME"),
         "USER": os.environ.get("POSTGRES_USER"),
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        "HOST": "db",
+        "HOST": "db-django",
         "PORT": 5432,
     }
 }
@@ -146,3 +149,11 @@ CHANNEL_LAYERS = {
 
 ASGI_APPLICATION = "main.asgi.application"
 
+AUTH_USER_MODEL = "users.User"
+
+LOGIN_URL = '/admin/login'
+
+MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware"] + MIDDLEWARE
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = (os.environ.get("TRUSTED_ORIGINS").split(" "))
+CORS_PREFLIGHT_MAX_AGE = 60 * 30
