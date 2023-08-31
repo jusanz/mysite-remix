@@ -66,3 +66,10 @@ docker compose exec django python manage.py collectstatic
 ```
 docker compose exec django python manage.py createsuperuser
 ```
+
+## Database
+
+```
+psql -U postgres -W
+
+```
