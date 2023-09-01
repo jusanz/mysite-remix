@@ -1,5 +1,6 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/node";
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 
 import { db } from "./db.server";
 
@@ -88,4 +89,47 @@ export async function requireUserId(
     throw redirect(`/login?${searchParams}`);
   }
   return userId;
+}
+
+function getRandomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function makeid(length: number) {
+  let result = "";
+  //const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
+
+export function authorizationCode() {
+  const codeVerifier = btoa(makeid(getRandomInt(43, 128)));
+  const codeChallenge = btoa(
+    createHash("sha256").update(codeVerifier).digest("hex").toString()
+  ).replace(/=/g, "");
+  const clientId = process.env.DJANGO_CLIENT_ID;
+
+  return { codeVerifier, codeChallenge, clientId };
+}
+
+export async function oauth() {
+  return await fetch("http://django:8000/o/token/", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(
+        process.env.DJANDGO_CLIENT_ID + ":" + process.env.DJANDGO_CLIENT_SECRET
+      ).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "Cache-Control": "no-cache",
+    },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+    }),
+  });
 }
