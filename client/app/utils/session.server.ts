@@ -1,5 +1,6 @@
-import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import { createCookieSessionStorage, redirect, json } from "@remix-run/node";
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 
 import { db } from "./db.server";
 
@@ -88,4 +89,106 @@ export async function requireUserId(
     throw redirect(`/login?${searchParams}`);
   }
   return userId;
+}
+
+function getRandomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function makeid(length: number) {
+  let result = "";
+  //const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
+
+export async function oauth() {
+  return await fetch("http://django:8000/o/token/", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(
+        process.env.DJANDGO_CLIENT_ID + ":" + process.env.DJANDGO_CLIENT_SECRET
+      ).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "Cache-Control": "no-cache",
+    },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+    }),
+  });
+}
+
+export async function generateCodeChallenge(request: Request) {
+  const crypto = require("crypto");
+
+  const session = await getUserSession(request);
+
+  //const codeVerifier = ;
+  const codeVerifier = btoa(makeid(getRandomInt(43, 128)));
+  const codeChallenge = btoa(
+    crypto.createHash("sha256").update(codeVerifier).digest()
+  )
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+  const clientId = process.env.DJANGO_CLIENT_ID;
+  if (typeof clientId !== "string") {
+    throw new Error("No client id provided");
+  }
+
+  const searchParams = new URLSearchParams({
+    codeChallenge,
+    clientId,
+  });
+
+  session.set("codeVerifier", codeVerifier);
+  return redirect(`/auth?${searchParams}`, {
+    headers: {
+      "Set-Cookie": await storage.commitSession(session),
+    },
+  });
+}
+
+export async function authorize(request: Request, code: string) {
+  const session = await getUserSession(request);
+  const codeVerifier = session.get("codeVerifier");
+  if (!codeVerifier || typeof codeVerifier !== "string") {
+    throw new Error("No code verifier provided");
+  }
+  const clientId = process.env.DJANGO_CLIENT_ID;
+  const clientSecret = process.env.DJANGO_CLIENT_SECRET;
+  if (typeof clientId !== "string" || typeof clientSecret !== "string") {
+    throw new Error("No client id or secret provided");
+  }
+  const response = await fetch("http://django:8000/o/token/", {
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "Cache-Control": "no-cache",
+    },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      code_verifier: codeVerifier,
+      redirect_uri: "http://localhost:3000/auth/",
+      grant_type: "authorization_code",
+    }).toString(),
+  });
+  const json: {
+    access_token: string;
+    expires_in: number;
+    token_type: string;
+    scope: string;
+    refresh_token: string;
+  } = await response.json();
+  return json;
 }
