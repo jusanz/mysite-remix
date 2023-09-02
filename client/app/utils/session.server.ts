@@ -1,4 +1,4 @@
-import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import { createCookieSessionStorage, redirect, json } from "@remix-run/node";
 import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
 
@@ -108,16 +108,6 @@ function makeid(length: number) {
   return result;
 }
 
-export function authorizationCode() {
-  const codeVerifier = btoa(makeid(getRandomInt(43, 128)));
-  const codeChallenge = btoa(
-    createHash("sha256").update(codeVerifier).digest("hex").toString()
-  ).replace(/=/g, "");
-  const clientId = process.env.DJANGO_CLIENT_ID;
-
-  return { codeVerifier, codeChallenge, clientId };
-}
-
 export async function oauth() {
   return await fetch("http://django:8000/o/token/", {
     method: "POST",
@@ -132,4 +122,73 @@ export async function oauth() {
       grant_type: "client_credentials",
     }),
   });
+}
+
+export async function generateCodeChallenge(request: Request) {
+  const crypto = require("crypto");
+
+  const session = await getUserSession(request);
+
+  //const codeVerifier = ;
+  const codeVerifier = btoa(makeid(getRandomInt(43, 128)));
+  const codeChallenge = btoa(
+    crypto.createHash("sha256").update(codeVerifier).digest()
+  )
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+  const clientId = process.env.DJANGO_CLIENT_ID;
+  if (typeof clientId !== "string") {
+    throw new Error("No client id provided");
+  }
+
+  const searchParams = new URLSearchParams({
+    codeChallenge,
+    clientId,
+  });
+
+  session.set("codeVerifier", codeVerifier);
+  return redirect(`/auth?${searchParams}`, {
+    headers: {
+      "Set-Cookie": await storage.commitSession(session),
+    },
+  });
+}
+
+export async function authorize(request: Request, code: string) {
+  const session = await getUserSession(request);
+  const codeVerifier = session.get("codeVerifier");
+  if (!codeVerifier || typeof codeVerifier !== "string") {
+    throw new Error("No code verifier provided");
+  }
+  const clientId = process.env.DJANGO_CLIENT_ID;
+  const clientSecret = process.env.DJANGO_CLIENT_SECRET;
+  if (typeof clientId !== "string" || typeof clientSecret !== "string") {
+    throw new Error("No client id or secret provided");
+  }
+  const response = await fetch("http://django:8000/o/token/", {
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "Cache-Control": "no-cache",
+    },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      code_verifier: codeVerifier,
+      redirect_uri: "http://localhost:3000/auth/",
+      grant_type: "authorization_code",
+    }).toString(),
+  });
+  const json: {
+    access_token: string;
+    expires_in: number;
+    token_type: string;
+    scope: string;
+    refresh_token: string;
+  } = await response.json();
+  return json;
 }
