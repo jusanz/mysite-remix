@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'oauth2_provider',
     'corsheaders',
+    'rest_framework',
     'users',
 ]
 
@@ -157,3 +158,11 @@ MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware"] + MIDDLEWARE
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = (os.environ.get("TRUSTED_ORIGINS").split(" "))
 CORS_PREFLIGHT_MAX_AGE = 60 * 30
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
