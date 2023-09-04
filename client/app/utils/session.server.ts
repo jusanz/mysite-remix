@@ -190,5 +190,34 @@ export async function authorize(request: Request, code: string) {
     scope: string;
     refresh_token: string;
   } = await response.json();
-  return json;
+
+  // get user_id from django
+
+  // get or create user
+  const userId = session.get("userId");
+  if (!userId || typeof userId !== "string") {
+    const user = await db.user.create({
+      data: {
+        access_token: json.access_token,
+        refresh_token: json.refresh_token,
+      },
+    });
+    return redirect("/user-created", {
+      headers: {
+        "Set-Cookie": await storage.commitSession(session),
+      },
+    });
+  }
+  return { message: "User already exists" };
 }
+
+const getUserInfo = async (request: Request) => {
+  const response = await fetch("http://django:8000/api/user/", {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json; charset=UTF-8",
+    },
+    body: JSON.stringify({}),
+  });
+};
