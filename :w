@@ -214,16 +214,13 @@ export async function authorize(request: Request, code: string) {
 export const getUserInfo = async (request: Request) => {
   const user = await db.user.findUnique({
     where: { id: await getUserId(request) },
-  });
-
+  }
+  
   const response = await fetch("http://django:8000/users/", {
     method: "GET",
     mode: "cors",
     headers: {
-      Authorization: `Bearer ${user.access_token}`,
-      "Content-Type": "application/json; charset=UTF-8",
-    },
+      Authorization: `Bearer ${db.user.findUnique({}`,
+      "Content-Type":"application/json; charset=UTF-8",
   });
-  const json = await response.json();
-  return json;
 };
