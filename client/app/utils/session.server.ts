@@ -169,7 +169,6 @@ export async function authorize(request: Request, code: string) {
   const response = await fetch("http://django:8000/o/token/", {
     method: "POST",
     mode: "cors",
-    credentials: "include",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
       "Cache-Control": "no-cache",
@@ -202,13 +201,14 @@ export async function authorize(request: Request, code: string) {
         refresh_token: json.refresh_token,
       },
     });
+    session.set("userId", user.id);
     return redirect("/user-created", {
       headers: {
         "Set-Cookie": await storage.commitSession(session),
       },
     });
   }
-  return { message: "User already exists" };
+  throw { message: "User already exists" };
 }
 
 export const getUserInfo = async (request: Request) => {
