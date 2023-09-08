@@ -208,7 +208,7 @@ export async function authorize(request: Request, code: string) {
       },
     });
   }
-  throw { message: "User already exists" };
+  return redirect("/user-created");
 }
 
 export const getUserInfo = async (request: Request) => {
@@ -216,7 +216,7 @@ export const getUserInfo = async (request: Request) => {
     where: { id: await getUserId(request) },
   });
 
-  const response = await fetch("http://django:8000/users/", {
+  const response = await fetch("http://django:8000/users/user-info/", {
     method: "GET",
     mode: "cors",
     headers: {
