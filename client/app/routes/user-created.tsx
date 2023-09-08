@@ -14,5 +14,5 @@ export default function UserCreated() {
   useEffect(() => {
     console.log(data);
   }, []);
-  return <div></div>;
+  return <div>logined as {data?.username}</div>;
 }
