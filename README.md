@@ -16,6 +16,13 @@ docker compose exec client npx prisma db push
 POSTGRES_DB="postgres"
 POSTGRES_USER="postgres"
 POSTGRES_PASSWORD="postgres"
+SESSION_SECRET="sesstion-secret"
+DJANGO_SECRET_KEY="django-secret-key"
+DJANGO_CLIENT_ID="django-client-id"
+DJANGO_CLIENT_SECRET="django-client-secret"
+DJANGO_TRUSTED_ORIGINS="http://localhost:3000"
+DJANGO_ALLOWED_HOSTS="localhost django"
+
 ```
 
 ```client/.env
